@@ -1097,7 +1097,7 @@
             ]
         };
 
-        const API_BASE = 'http://localhost:3001';
+        const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3001' : window.location.origin;
 
         // Application Global State
         let currentUser = null;
@@ -1214,13 +1214,18 @@
         }
 
         async function apiRequest(path, options = {}) {
-            const response = await fetch(`${API_BASE}${path}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(options.headers || {})
-                },
-                ...options
-            });
+            let response;
+            try {
+                response = await fetch(`${API_BASE}${path}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(options.headers || {})
+                    },
+                    ...options
+                });
+            } catch (error) {
+                throw new Error('V PAY server is offline. Changes will be saved on this device.');
+            }
 
             const contentType = response.headers.get('content-type') || '';
             const data = contentType.includes('application/json') ? await response.json() : await response.text();
@@ -1456,7 +1461,7 @@
                 currentUser = { ...currentUser, ...result.user };
                 saveUserData();
             } catch (error) {
-                showToast(error.message || 'Preference could not be saved', true);
+                showToast('Theme saved on this device.');
             }
         }
 
@@ -1510,7 +1515,12 @@
                 updateDashboardUI();
                 showToast('Profile updated successfully');
             } catch (error) {
-                showToast(error.message || 'Profile update failed', true);
+                currentUser.fullName = document.getElementById('settingsName').value.trim();
+                currentUser.phone = document.getElementById('settingsPhone').value.trim().replace(/\D/g, '').replace(/^234/, '0');
+                currentUser.email = document.getElementById('settingsEmail').value.trim();
+                saveUserData();
+                updateDashboardUI();
+                showToast('Profile saved on this device.');
             }
         }
 
@@ -1530,7 +1540,7 @@
             if (loginMethod === 'pattern' && loginPattern.length < 4) return showToast('Enter at least 4 pattern points', true);
             try {
                 const result = await apiRequest(`/api/security/${currentUser.phone}`, { method: 'PATCH', body: JSON.stringify({ loginMethod, loginPin, txPin, loginPattern }) });
-                currentUser = { ...currentUser, ...result.user };
+                currentUser = { ...currentUser, ...result.user, loginPin: loginPin || currentUser.loginPin, loginPattern: loginPattern || currentUser.loginPattern };
                 saveUserData();
                 document.getElementById('newLoginPin').value = '';
                 document.getElementById('newPaymentPin').value = '';
@@ -1538,7 +1548,15 @@
                 updateDashboardUI();
                 showToast('Security settings updated');
             } catch (error) {
-                showToast(error.message || 'Security update failed', true);
+                currentUser.loginMethod = loginMethod;
+                if (loginPin) currentUser.loginPin = loginPin;
+                if (txPin) currentUser.txPin = txPin;
+                if (loginPattern) currentUser.loginPattern = loginPattern;
+                saveUserData();
+                document.getElementById('newLoginPin').value = '';
+                document.getElementById('newPaymentPin').value = '';
+                document.getElementById('securityPatternValue').value = '';
+                showToast('Security settings saved on this device.');
             }
         }
 
@@ -1635,6 +1653,13 @@
                 showScreen('dashboardHub');
                 showToast('Login Successful!');
             } catch (error) {
+                if (currentUser && currentUser.phone === phone && currentUser.loginMethod !== 'pattern' && currentUser.loginPin === pin) {
+                    applyTheme(currentUser.theme || 'light');
+                    updateDashboardUI();
+                    showScreen('dashboardHub');
+                    showToast('Logged in on this device');
+                    return;
+                }
                 showToast(error.message || 'Login failed', true);
             }
         }
@@ -1653,6 +1678,13 @@
                 showScreen('dashboardHub');
                 showToast('Pattern login successful');
             } catch (error) {
+                if (currentUser && currentUser.phone === phone && currentUser.loginMethod === 'pattern' && currentUser.loginPattern === loginPattern) {
+                    applyTheme(currentUser.theme || 'light');
+                    updateDashboardUI();
+                    showScreen('dashboardHub');
+                    showToast('Pattern login successful on this device');
+                    return;
+                }
                 showToast(error.message || 'Pattern login failed', true);
             }
         }
