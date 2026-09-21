@@ -1224,7 +1224,7 @@
                     ...options
                 });
             } catch (error) {
-                throw new Error('V PAY server is offline. Changes will be saved on this device.');
+                throw new Error('V PAY server is unavailable. Start the backend with npm start and try again.');
             }
 
             const contentType = response.headers.get('content-type') || '';
@@ -1539,23 +1539,17 @@
             if (txPin && !/^\d{4}$/.test(txPin)) return showToast('Payment PIN must be exactly 4 digits', true);
             if (loginMethod === 'pattern' && loginPattern.length < 4) return showToast('Enter at least 4 pattern points', true);
 
-            currentUser.loginMethod = loginMethod;
-            if (loginPin) currentUser.loginPin = loginPin;
-            if (txPin) currentUser.txPin = txPin;
-            if (loginPattern) currentUser.loginPattern = loginPattern;
-            saveUserData();
-            document.getElementById('newLoginPin').value = '';
-            document.getElementById('newPaymentPin').value = '';
-            document.getElementById('securityPatternValue').value = '';
-            updateDashboardUI();
-            showToast('Security settings saved');
-
             try {
-                const result = await apiRequest(`/api/security/${currentUser.phone}`, { method: 'PATCH', body: JSON.stringify({ loginMethod, loginPin, txPin, loginPattern }) });
+                const result = await apiRequest(`/api/security/${currentUser.accountNumber}`, { method: 'PATCH', body: JSON.stringify({ loginMethod, loginPin, txPin, loginPattern }) });
                 currentUser = { ...currentUser, ...result.user, loginPin: loginPin || currentUser.loginPin, loginPattern: loginPattern || currentUser.loginPattern };
                 saveUserData();
+                document.getElementById('newLoginPin').value = '';
+                document.getElementById('newPaymentPin').value = '';
+                document.getElementById('securityPatternValue').value = '';
+                updateDashboardUI();
+                showToast('Security settings saved to your account');
             } catch (error) {
-                // Local credentials remain active when the API is unavailable.
+                showToast(error.message || 'Security request failed', true);
             }
         }
 

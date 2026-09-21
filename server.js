@@ -264,7 +264,7 @@ app.patch('/api/profile/:phone', (req, res) => {
 });
 
 app.patch('/api/security/:phone', (req, res) => {
-  const user = findUserByPhone(req.params.phone);
+  const user = findUserByPhone(req.params.phone) || readUsers().find((entry) => entry.accountNumber === String(req.params.phone));
   if (!user) return res.status(404).json({ message: 'Account not found' });
 
   const { loginPin, txPin, loginMethod, loginPattern } = req.body || {};
