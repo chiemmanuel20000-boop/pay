@@ -1097,7 +1097,10 @@
             ]
         };
 
-        const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3001' : window.location.origin;
+        const API_BASES = [...new Set([
+            window.location.protocol === 'file:' ? null : window.location.origin,
+            'http://localhost:3001'
+        ].filter(Boolean))];
 
         // Application Global State
         let currentUser = null;
@@ -1215,23 +1218,30 @@
 
         async function apiRequest(path, options = {}) {
             let response;
-            try {
-                response = await fetch(`${API_BASE}${path}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(options.headers || {})
-                    },
-                    ...options
-                });
-            } catch (error) {
-                throw new Error('V PAY server is unavailable. Start the backend with npm start and try again.');
+            let lastError;
+            for (const apiBase of API_BASES) {
+                try {
+                    response = await fetch(`${apiBase}${path}`, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(options.headers || {})
+                        },
+                        ...options
+                    });
+                    break;
+                } catch (error) {
+                    lastError = error;
+                }
+            }
+            if (!response) {
+                throw new Error('V PAY backend is unavailable. Run npm start, then refresh the app.');
             }
 
             const contentType = response.headers.get('content-type') || '';
             const data = contentType.includes('application/json') ? await response.json() : await response.text();
 
             if (!response.ok) {
-                throw new Error(data.message || 'The account update could not be completed.');
+                throw new Error(data.message || 'V PAY could not complete that action.');
             }
 
             return data;
@@ -1454,7 +1464,7 @@
             currentUser[key] = value;
             saveUserData();
             try {
-                const result = await apiRequest(`/api/preferences/${currentUser.phone}`, { method: 'PATCH', body: JSON.stringify({ theme: value }) });
+                const result = await apiRequest(`/api/preferences/${currentUser.accountNumber}`, { method: 'PATCH', body: JSON.stringify({ theme: value }) });
                 currentUser = { ...currentUser, ...result.user };
                 saveUserData();
             } catch (error) {
@@ -1498,7 +1508,7 @@
         async function saveProfileSettings() {
             if (!currentUser) return;
             try {
-                const result = await apiRequest(`/api/profile/${currentUser.phone}`, {
+                const result = await apiRequest(`/api/profile/${currentUser.accountNumber}`, {
                     method: 'PATCH',
                     body: JSON.stringify({
                         fullName: document.getElementById('settingsName').value.trim(),

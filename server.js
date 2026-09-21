@@ -246,7 +246,7 @@ app.post('/api/login', (req, res) => {
 });
 
 app.patch('/api/profile/:phone', (req, res) => {
-  const user = findUserByPhone(req.params.phone);
+  const user = findUserByPhoneOrAccount(req.params.phone);
   if (!user) return res.status(404).json({ message: 'Account not found' });
 
   const { fullName, phone, email, profileImage } = req.body || {};
@@ -297,7 +297,7 @@ app.patch('/api/security/:phone', (req, res) => {
 });
 
 app.patch('/api/preferences/:phone', (req, res) => {
-  const user = findUserByPhone(req.params.phone);
+  const user = findUserByPhoneOrAccount(req.params.phone);
   if (!user) return res.status(404).json({ message: 'Account not found' });
   const { theme } = req.body || {};
   if (!['light', 'dark'].includes(theme)) return res.status(400).json({ message: 'Theme must be light or dark' });
