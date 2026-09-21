@@ -57,6 +57,13 @@ function publicUserShape(user) {
     cardLast4: user.cardLast4 || '0001',
     branchName: user.branchName || 'Victoria Island',
     bankName: user.bankName || 'V PAY',
+    email: user.email || '',
+    profileImage: user.profileImage || '',
+    loginMethod: user.loginMethod || 'pin',
+    theme: user.theme || 'light',
+    cardNumber: user.cardNumber || '',
+    cardExpiry: user.cardExpiry || '08/29',
+    cardCvc: user.cardCvc || '482',
     txPin: user.txPin,
     history: user.history || []
   };
@@ -83,6 +90,12 @@ function seedDemoAccounts() {
       cardLast4: '0001',
       branchName: 'Victoria Island Branch',
       bankName: 'V PAY',
+      email: 'adaeze.okafor@example.com',
+      loginMethod: 'pin',
+      theme: 'light',
+      cardNumber: '5399 4412 7810 0001',
+      cardExpiry: '08/29',
+      cardCvc: '482',
       balance: 250000,
       history: [
         { id: cryptoId(), type: 'Welcome Bonus', title: 'Account Opening Bonus', amount: 250000, isCredit: true, senderName: 'V PAY', receiverName: 'Adaeze Okafor', date: new Date().toISOString(), ref: createTransactionRef('VIPY-WELCOME') }
@@ -104,6 +117,12 @@ function seedDemoAccounts() {
       cardLast4: '3456',
       branchName: 'Lekki Phase 1 Branch',
       bankName: 'V PAY',
+      email: 'chinedu.eze@example.com',
+      loginMethod: 'pin',
+      theme: 'light',
+      cardNumber: '5399 4412 7810 3456',
+      cardExpiry: '11/29',
+      cardCvc: '731',
       balance: 175000,
       history: [
         { id: cryptoId(), type: 'Welcome Bonus', title: 'Account Opening Bonus', amount: 175000, isCredit: true, senderName: 'V PAY', receiverName: 'Chinedu Eze', date: new Date().toISOString(), ref: createTransactionRef('VIPY-WELCOME') }
@@ -168,6 +187,13 @@ app.post('/api/register', (req, res) => {
     cardLast4: String(Math.floor(1000 + Math.random() * 9000)),
     branchName: 'Victoria Island Branch',
     bankName: 'V PAY',
+    email: '',
+    profileImage: '',
+    loginMethod: 'pin',
+    theme: 'light',
+    cardNumber: `5399 4412 7810 ${String(Math.floor(1000 + Math.random() * 9000))}`,
+    cardExpiry: '08/29',
+    cardCvc: String(Math.floor(100 + Math.random() * 900)),
     balance: 5000,
     history: [
       {
@@ -194,21 +220,87 @@ app.post('/api/register', (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-  const { phone, loginPin } = req.body || {};
+  const { phone, loginPin, loginPattern } = req.body || {};
   const user = findUserByPhone(phone);
 
   if (!user) {
     return res.status(404).json({ message: 'Account not found' });
   }
 
-  if (String(user.loginPin) !== String(loginPin)) {
-    return res.status(401).json({ message: 'Incorrect login PIN' });
+  const credentialMatches = user.loginMethod === 'pattern'
+    ? Boolean(user.loginPattern) && String(user.loginPattern) === String(loginPattern)
+    : String(user.loginPin) === String(loginPin);
+  if (!credentialMatches) {
+    return res.status(401).json({ message: user.loginMethod === 'pattern' ? 'Incorrect login pattern' : 'Incorrect login PIN' });
   }
 
   return res.json({
     message: 'Login successful',
     user: publicUserShape(user)
   });
+});
+
+app.patch('/api/profile/:phone', (req, res) => {
+  const user = findUserByPhone(req.params.phone);
+  if (!user) return res.status(404).json({ message: 'Account not found' });
+
+  const { fullName, phone, email, profileImage } = req.body || {};
+  const nextPhone = normalizePhone(phone || user.phone);
+  if (!fullName || fullName.trim().length < 2 || nextPhone.length < 10) {
+    return res.status(400).json({ message: 'Name and a valid phone number are required' });
+  }
+
+  const users = readUsers();
+  const index = users.findIndex((entry) => entry.id === user.id);
+  const duplicate = users.find((entry) => entry.id !== user.id && normalizePhone(entry.phone) === nextPhone);
+  if (duplicate) return res.status(409).json({ message: 'That phone number is already in use' });
+
+  users[index].fullName = fullName.trim();
+  users[index].phone = nextPhone;
+  users[index].email = String(email || '').trim();
+  users[index].profileImage = String(profileImage || '');
+  writeUsers(users);
+  return res.json({ message: 'Profile updated', user: publicUserShape(users[index]) });
+});
+
+app.patch('/api/security/:phone', (req, res) => {
+  const user = findUserByPhone(req.params.phone);
+  if (!user) return res.status(404).json({ message: 'Account not found' });
+
+  const { loginPin, txPin, loginMethod, loginPattern } = req.body || {};
+  if (loginPin && (!/^\d{6}$/.test(String(loginPin)))) {
+    return res.status(400).json({ message: 'Login PIN must be exactly 6 digits' });
+  }
+  if (txPin && (!/^\d{4}$/.test(String(txPin)))) {
+    return res.status(400).json({ message: 'Payment PIN must be exactly 4 digits' });
+  }
+  if (loginMethod && !['pin', 'pattern'].includes(loginMethod)) {
+    return res.status(400).json({ message: 'Choose PIN or pattern login' });
+  }
+  if (loginMethod === 'pattern' && (!loginPattern || String(loginPattern).length < 4)) {
+    return res.status(400).json({ message: 'Pattern must contain at least 4 points' });
+  }
+
+  const users = readUsers();
+  const index = users.findIndex((entry) => entry.id === user.id);
+  if (loginPin) users[index].loginPin = String(loginPin);
+  if (txPin) users[index].txPin = String(txPin);
+  if (loginMethod) users[index].loginMethod = loginMethod;
+  if (loginPattern) users[index].loginPattern = String(loginPattern);
+  writeUsers(users);
+  return res.json({ message: 'Security settings updated', user: publicUserShape(users[index]) });
+});
+
+app.patch('/api/preferences/:phone', (req, res) => {
+  const user = findUserByPhone(req.params.phone);
+  if (!user) return res.status(404).json({ message: 'Account not found' });
+  const { theme } = req.body || {};
+  if (!['light', 'dark'].includes(theme)) return res.status(400).json({ message: 'Theme must be light or dark' });
+  const users = readUsers();
+  const index = users.findIndex((entry) => entry.id === user.id);
+  users[index].theme = theme;
+  writeUsers(users);
+  return res.json({ message: 'Preferences updated', user: publicUserShape(users[index]) });
 });
 
 app.post('/api/transfer', (req, res) => {
@@ -440,8 +532,10 @@ app.get('/api/cards/:phone', (req, res) => {
       id: 'primary-card',
       name: user.fullName,
       type: 'V PAY Premium',
+      number: user.cardNumber || `5399 4412 7810 ${user.cardLast4 || '0001'}`,
       last4: user.cardLast4 || '0001',
-      expiry: '08/29',
+      expiry: user.cardExpiry || '08/29',
+      cvc: user.cardCvc || '482',
       brand: 'V PAY',
       status: 'Active',
       spendingLimit: 250000

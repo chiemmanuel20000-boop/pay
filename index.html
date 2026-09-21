@@ -88,20 +88,6 @@
         .fp-pulse {
             animation: pulse-ring 2s infinite;
         }
-        .keypad-btn {
-            min-height: 52px;
-            border-radius: 1rem;
-            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-            border: 1px solid #e2e8f0;
-            color: #0f172a;
-            font-weight: 800;
-            font-size: 1.05rem;
-            transition: transform 0.15s ease, background 0.15s ease;
-        }
-        .keypad-btn:active {
-            transform: scale(0.98);
-            background: linear-gradient(180deg, #ecfdf5 0%, #dcfce7 100%);
-        }
     </style>
 </head>
 <body class="bg-lime-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex justify-center items-center font-sans antialiased selection:bg-brand-400 selection:text-black">
@@ -130,11 +116,6 @@
             </div>
             
             <div class="flex items-center space-x-3">
-                <!-- Dark / Light Mode Toggle Button -->
-                <button id="themeToggle" onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-all hover:scale-105 active:scale-95">
-                    <i class="fa-solid fa-moon text-sm dark:hidden"></i>
-                    <i class="fa-solid fa-sun text-sm hidden dark:block text-amber-400"></i>
-                </button>
                 <div class="text-[10px] bg-brand-400/20 text-brand-600 dark:text-brand-400 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
                     Nigeria
                 </div>
@@ -291,13 +272,24 @@
                 </div>
 
                 <!-- Login Method Tabs -->
-                <div class="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                <div class="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
                     <button id="loginTabPin" onclick="switchLoginMode('pin')" class="py-2 rounded-lg text-xs font-bold transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm">
                         6-Digit PIN
                     </button>
                     <button id="loginTabFP" onclick="switchLoginMode('fp')" class="py-2 rounded-lg text-xs font-bold transition text-slate-500 dark:text-slate-400">
                         Fingerprint
                     </button>
+                    <button id="loginTabPattern" onclick="switchLoginMode('pattern')" class="py-2 rounded-lg text-xs font-bold transition text-slate-500 dark:text-slate-400">
+                        Pattern
+                    </button>
+                </div>
+
+                <div id="loginPatternForm" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Pattern points</label>
+                        <input type="text" id="loginPatternInput" placeholder="e.g. 1-2-5-8" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3.5 px-4 text-center tracking-wider text-slate-900 dark:text-white text-lg font-bold focus:outline-none focus:border-brand-400">
+                    </div>
+                    <button onclick="attemptPatternLogin()" class="w-full bg-brand-400 hover:bg-brand-500 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg shadow-brand-400/20 active:scale-[0.98] transition">Login with pattern</button>
                 </div>
 
                 <!-- PIN Login Form -->
@@ -524,6 +516,64 @@
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Currency</span><span class="font-bold text-brand-600 dark:text-brand-300">Naira (₦)</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Identity status</span><span class="font-bold text-emerald-500">Verified</span></div>
                 </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="showScreen('settingsScreen')" class="p-3 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-sliders"></i> Settings</button>
+                    <button onclick="showScreen('cardScreen')" class="p-3 rounded-xl bg-brand-400 text-slate-950 text-xs font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-credit-card"></i> V PAY Card</button>
+                </div>
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Contact details</h4>
+                    <div class="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 space-y-3 border border-slate-100 dark:border-slate-800 text-sm">
+                        <div class="flex justify-between"><span class="text-slate-500">Email</span><span id="profileEmail" class="font-semibold text-slate-900 dark:text-white"></span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Login method</span><span id="profileLoginMethod" class="font-semibold text-slate-900 dark:text-white">PIN</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= SETTINGS SCREEN ================= -->
+            <section id="settingsScreen" class="space-y-5 hidden pb-20">
+                <div class="flex items-center space-x-3">
+                    <button onclick="showScreen('profileScreen')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300"><i class="fa-solid fa-arrow-left text-xs"></i></button>
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">Settings</h2>
+                </div>
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Profile & contact</h4>
+                    <div class="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 space-y-3 border border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <div id="settingsAvatar" class="w-12 h-12 rounded-full gold-shine text-slate-950 font-black flex items-center justify-center overflow-hidden">VP</div>
+                            <label class="flex-1 text-xs font-bold text-brand-600 dark:text-brand-300 cursor-pointer"><i class="fa-solid fa-camera mr-1"></i> Change profile picture<input id="profileImageInput" type="file" accept="image/*" class="hidden" onchange="handleProfileImage(event)"></label>
+                        </div>
+                        <input id="settingsName" type="text" placeholder="Full name" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400">
+                        <input id="settingsPhone" type="tel" maxlength="10" placeholder="Phone number" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400">
+                        <input id="settingsEmail" type="email" placeholder="Email address" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400">
+                        <button onclick="saveProfileSettings()" class="w-full bg-brand-400 text-slate-950 font-bold py-3 rounded-xl text-sm">Save profile</button>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Appearance</h4>
+                    <div class="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <div><p class="text-sm font-bold text-slate-900 dark:text-white">Dark mode</p><p class="text-[10px] text-slate-500">Choose the look of your app</p></div>
+                        <button id="settingsThemeToggle" onclick="toggleTheme()" class="w-12 h-7 rounded-full bg-slate-300 dark:bg-brand-400 p-1 transition"><span class="block w-5 h-5 rounded-full bg-white shadow transition dark:translate-x-5"></span></button>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Security</h4>
+                    <div class="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 space-y-3 border border-slate-100 dark:border-slate-800">
+                        <select id="loginMethodSelect" onchange="togglePatternField()" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400"><option value="pin">Use PIN to log in</option><option value="pattern">Use pattern to log in</option></select>
+                        <input id="newLoginPin" type="password" maxlength="6" inputmode="numeric" placeholder="New 6-digit login PIN" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400">
+                        <input id="newPaymentPin" type="password" maxlength="4" inputmode="numeric" placeholder="New 4-digit payment PIN" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400">
+                        <input id="securityPatternInput" type="text" minlength="4" placeholder="Pattern points, e.g. 1-2-5-8" class="hidden w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400">
+                        <button onclick="saveSecuritySettings()" class="w-full bg-brand-400 text-slate-950 font-bold py-3 rounded-xl text-sm">Update security</button>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full border border-red-200 dark:border-red-900/50 text-red-500 font-bold py-3 rounded-xl text-sm"><i class="fa-solid fa-right-from-bracket mr-2"></i>Log out</button>
+            </section>
+
+            <!-- ================= V PAY CARD SCREEN ================= -->
+            <section id="cardScreen" class="space-y-5 hidden pb-20">
+                <div class="flex items-center space-x-3"><button onclick="showScreen('profileScreen')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300"><i class="fa-solid fa-arrow-left text-xs"></i></button><h2 class="text-lg font-bold text-slate-900 dark:text-white">V PAY Debit Card</h2></div>
+                <div class="relative overflow-hidden rounded-2xl p-5 text-white shadow-xl bg-gradient-to-br from-slate-950 via-slate-800 to-emerald-900 aspect-[1.58] flex flex-col justify-between"><div class="flex items-start justify-between"><div><p class="text-lg font-black tracking-widest">V PAY</p><p class="text-[9px] uppercase text-brand-300 tracking-[0.25em]">Premium debit</p></div><i class="fa-solid fa-wifi rotate-90 text-xl text-brand-300"></i></div><div><p id="cardNumberDisplay" class="font-mono text-lg tracking-[0.16em]">5399 4412 7810 0001</p><div class="flex justify-between mt-3 text-[10px] uppercase tracking-wider"><span id="cardHolderDisplay">Card holder</span><span>Debit</span></div></div></div>
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-slate-100 dark:border-slate-800"><div><p class="text-[10px] uppercase text-slate-500">Expires</p><p id="cardExpiryDisplay" class="font-bold text-slate-900 dark:text-white mt-1">08/29</p></div><div><p class="text-[10px] uppercase text-slate-500">CVC</p><p id="cardCvcDisplay" class="font-bold text-slate-900 dark:text-white mt-1">482</p></div></div>
+                <p class="text-[10px] text-slate-500">Keep your card number and CVC private. This is a simulated V PAY card for the demo app.</p>
             </section>
 
             <!-- ================= TRANSFER MONEY SCREEN ================= -->
@@ -893,30 +943,6 @@
             </div>
         </div>
 
-        <!-- CUSTOM NUMBER KEYPAD -->
-        <div id="numericKeypad" class="fixed inset-x-0 bottom-0 z-[60] bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 rounded-t-3xl shadow-2xl hidden">
-            <div class="max-w-md mx-auto">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Number keypad</p>
-                    <button onclick="hideNumericKeypad()" class="text-slate-500 dark:text-slate-300 text-xs font-bold">Done</button>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <button class="keypad-btn keypad-digit" data-value="1">1</button>
-                    <button class="keypad-btn keypad-digit" data-value="2">2</button>
-                    <button class="keypad-btn keypad-digit" data-value="3">3</button>
-                    <button class="keypad-btn keypad-digit" data-value="4">4</button>
-                    <button class="keypad-btn keypad-digit" data-value="5">5</button>
-                    <button class="keypad-btn keypad-digit" data-value="6">6</button>
-                    <button class="keypad-btn keypad-digit" data-value="7">7</button>
-                    <button class="keypad-btn keypad-digit" data-value="8">8</button>
-                    <button class="keypad-btn keypad-digit" data-value="9">9</button>
-                    <button class="keypad-btn keypad-clear" data-action="clear">Clear</button>
-                    <button class="keypad-btn keypad-digit" data-value="0">0</button>
-                    <button class="keypad-btn keypad-backspace" data-action="backspace"><i class="fa-solid fa-delete-left"></i></button>
-                </div>
-            </div>
-        </div>
-
         <!-- NOTIFICATION / TOAST ALERT -->
         <div id="toastNotification" class="fixed top-14 left-1/2 -translate-x-1/2 bg-slate-900 text-white border border-brand-400/40 text-xs font-semibold px-4 py-2.5 rounded-xl shadow-2xl z-50 transition-all duration-300 opacity-0 pointer-events-none flex items-center space-x-2">
             <i id="toastIcon" class="fa-solid fa-circle-info text-brand-400"></i>
@@ -1026,7 +1052,6 @@
         let isBalanceHidden = false;
         let activeUtilityTab = "airtime";
         let faceSnapshot = null;
-        let activeNumericInput = null;
 
         // Pending Transaction Details for PIN Authorization
         let pendingTx = null;
@@ -1039,76 +1064,22 @@
                 setTimeout(() => preloader.style.display = 'none', 500);
             }, 15000);
 
-            initializeNumericKeypad();
             populateBanks();
             populateDataPlans();
             populateTvPackages();
             loadUserData();
         };
 
-        function initializeNumericKeypad() {
-            document.querySelectorAll('.numeric-input').forEach((input) => {
-                input.setAttribute('inputmode', 'numeric');
-                input.setAttribute('pattern', '\\d*');
-                input.addEventListener('focus', () => {
-                    activeNumericInput = input;
-                    document.getElementById('numericKeypad').classList.remove('hidden');
-                });
-                input.addEventListener('input', () => {
-                    input.value = input.value.replace(/\D/g, '');
-                    if (input.maxLength && input.value.length > Number(input.maxLength)) {
-                        input.value = input.value.slice(0, Number(input.maxLength));
-                    }
-                });
-            });
-
-            document.querySelectorAll('.keypad-digit').forEach((button) => {
-                button.addEventListener('click', () => {
-                    if (!activeNumericInput) return;
-                    const maxLength = Number(activeNumericInput.maxLength || 999);
-                    if (activeNumericInput.value.length < maxLength) {
-                        activeNumericInput.value += button.dataset.value;
-                    }
-                    activeNumericInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    activeNumericInput.focus();
-                });
-            });
-
-            document.querySelectorAll('.keypad-backspace').forEach((button) => {
-                button.addEventListener('click', () => {
-                    if (!activeNumericInput) return;
-                    activeNumericInput.value = activeNumericInput.value.slice(0, -1);
-                    activeNumericInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    activeNumericInput.focus();
-                });
-            });
-
-            document.querySelectorAll('.keypad-clear').forEach((button) => {
-                button.addEventListener('click', () => {
-                    if (!activeNumericInput) return;
-                    activeNumericInput.value = '';
-                    activeNumericInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    activeNumericInput.focus();
-                });
-            });
-        }
-
-        function hideNumericKeypad() {
-            document.getElementById('numericKeypad').classList.add('hidden');
-            if (activeNumericInput) {
-                activeNumericInput.blur();
-                activeNumericInput = null;
-            }
-        }
-
         // Dark/Light Theme Switching
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
+            const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            if (currentUser) savePreference('theme', theme);
         }
 
         // Show Specific View Screen
         function showScreen(screenId) {
-            const screens = ['onboardingFlow', 'loginScreen', 'dashboardHub', 'profileScreen', 'transferScreen', 'airtimeDataScreen', 'tvCableScreen', 'txHistoryScreen', 'financeHub', 'statementScreen', 'transferSuccessScreen'];
+            const screens = ['onboardingFlow', 'loginScreen', 'dashboardHub', 'profileScreen', 'settingsScreen', 'cardScreen', 'transferScreen', 'airtimeDataScreen', 'tvCableScreen', 'txHistoryScreen', 'financeHub', 'statementScreen', 'transferSuccessScreen'];
             screens.forEach(s => {
                 const el = document.getElementById(s);
                 if (el) el.classList.add('hidden');
@@ -1124,8 +1095,16 @@
                 renderFinanceHub();
             }
 
+            if (screenId === 'cardScreen') {
+                renderCardDetails();
+            }
+
+            if (screenId === 'settingsScreen') {
+                populateSettingsForm();
+            }
+
             const nav = document.getElementById('bottomNav');
-            if (['dashboardHub', 'profileScreen', 'transferScreen', 'airtimeDataScreen', 'tvCableScreen', 'txHistoryScreen', 'financeHub', 'statementScreen', 'transferSuccessScreen'].includes(screenId)) {
+            if (['dashboardHub', 'profileScreen', 'settingsScreen', 'cardScreen', 'transferScreen', 'airtimeDataScreen', 'tvCableScreen', 'txHistoryScreen', 'financeHub', 'statementScreen', 'transferSuccessScreen'].includes(screenId)) {
                 nav.classList.remove('hidden');
             } else {
                 nav.classList.add('hidden');
@@ -1362,11 +1341,124 @@
             }
         }
 
+        function applyTheme(theme) {
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+        }
+
+        async function savePreference(key, value) {
+            if (!currentUser) return;
+            currentUser[key] = value;
+            saveUserData();
+            try {
+                const result = await apiRequest(`/api/preferences/${currentUser.phone}`, { method: 'PATCH', body: JSON.stringify({ theme: value }) });
+                currentUser = { ...currentUser, ...result.user };
+                saveUserData();
+            } catch (error) {
+                showToast(error.message || 'Preference could not be saved', true);
+            }
+        }
+
+        function populateSettingsForm() {
+            if (!currentUser) return;
+            document.getElementById('settingsName').value = currentUser.fullName || '';
+            document.getElementById('settingsPhone').value = currentUser.phone || '';
+            document.getElementById('settingsEmail').value = currentUser.email || '';
+            document.getElementById('loginMethodSelect').value = currentUser.loginMethod || 'pin';
+            togglePatternField();
+            updateAvatarElement(document.getElementById('settingsAvatar'), currentUser.profileImage, currentUser.fullName);
+        }
+
+        function updateAvatarElement(element, image, name) {
+            if (!element) return;
+            if (image) {
+                element.innerHTML = `<img src="${image}" alt="Profile picture" class="w-full h-full object-cover">`;
+            } else {
+                element.innerText = (name || 'VP').split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase();
+            }
+        }
+
+        function handleProfileImage(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            if (file.size > 700000) return showToast('Choose an image smaller than 700KB', true);
+            const reader = new FileReader();
+            reader.onload = () => {
+                currentUser.profileImage = reader.result;
+                updateAvatarElement(document.getElementById('settingsAvatar'), currentUser.profileImage, currentUser.fullName);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveProfileSettings() {
+            if (!currentUser) return;
+            try {
+                const result = await apiRequest(`/api/profile/${currentUser.phone}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        fullName: document.getElementById('settingsName').value.trim(),
+                        phone: document.getElementById('settingsPhone').value.trim(),
+                        email: document.getElementById('settingsEmail').value.trim(),
+                        profileImage: currentUser.profileImage || ''
+                    })
+                });
+                currentUser = { ...currentUser, ...result.user };
+                saveUserData();
+                updateDashboardUI();
+                showToast('Profile updated successfully');
+            } catch (error) {
+                showToast(error.message || 'Profile update failed', true);
+            }
+        }
+
+        function togglePatternField() {
+            const isPattern = document.getElementById('loginMethodSelect').value === 'pattern';
+            document.getElementById('securityPatternInput').classList.toggle('hidden', !isPattern);
+        }
+
+        async function saveSecuritySettings() {
+            if (!currentUser) return;
+            const loginMethod = document.getElementById('loginMethodSelect').value;
+            const loginPin = document.getElementById('newLoginPin').value.trim();
+            const txPin = document.getElementById('newPaymentPin').value.trim();
+            const loginPattern = document.getElementById('securityPatternInput').value.trim();
+            if (loginPin && !/^\d{6}$/.test(loginPin)) return showToast('Login PIN must be exactly 6 digits', true);
+            if (txPin && !/^\d{4}$/.test(txPin)) return showToast('Payment PIN must be exactly 4 digits', true);
+            if (loginMethod === 'pattern' && loginPattern.length < 4) return showToast('Enter at least 4 pattern points', true);
+            try {
+                const result = await apiRequest(`/api/security/${currentUser.phone}`, { method: 'PATCH', body: JSON.stringify({ loginMethod, loginPin, txPin, loginPattern }) });
+                currentUser = { ...currentUser, ...result.user };
+                saveUserData();
+                document.getElementById('newLoginPin').value = '';
+                document.getElementById('newPaymentPin').value = '';
+                document.getElementById('securityPatternInput').value = '';
+                updateDashboardUI();
+                showToast('Security settings updated');
+            } catch (error) {
+                showToast(error.message || 'Security update failed', true);
+            }
+        }
+
+        async function renderCardDetails() {
+            if (!currentUser) return;
+            try {
+                const cards = await apiRequest(`/api/cards/${currentUser.phone}`);
+                const card = cards[0];
+                document.getElementById('cardNumberDisplay').innerText = card.number || `5399 4412 7810 ${card.last4}`;
+                document.getElementById('cardExpiryDisplay').innerText = card.expiry;
+                document.getElementById('cardCvcDisplay').innerText = card.cvc || '***';
+                document.getElementById('cardHolderDisplay').innerText = card.name;
+            } catch (error) {
+                showToast('Card details are unavailable', true);
+            }
+        }
+
         function loadUserData() {
             const saved = localStorage.getItem('vipy_user');
             if (saved) {
                 currentUser = JSON.parse(saved);
+                applyTheme(currentUser.theme || 'light');
                 document.getElementById('loginUserDisplay').innerText = `Welcome back, ${currentUser.fullName.split(' ')[0]}`;
+                switchLoginMode(currentUser.loginMethod === 'pattern' ? 'pattern' : 'pin');
                 showScreen('loginScreen');
             } else {
                 showScreen('onboardingFlow');
@@ -1392,19 +1484,23 @@
         function switchLoginMode(mode) {
             const tabPin = document.getElementById('loginTabPin');
             const tabFP = document.getElementById('loginTabFP');
+            const tabPattern = document.getElementById('loginTabPattern');
             const formPin = document.getElementById('loginPinForm');
             const formFP = document.getElementById('loginFPForm');
+            const formPattern = document.getElementById('loginPatternForm');
+
+            [tabPin, tabFP, tabPattern].forEach(tab => tab.className = "py-2 rounded-lg text-xs font-bold transition text-slate-500 dark:text-slate-400");
+            [formPin, formFP, formPattern].forEach(form => form.classList.add('hidden'));
 
             if (mode === 'pin') {
                 tabPin.className = "py-2 rounded-lg text-xs font-bold transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm";
-                tabFP.className = "py-2 rounded-lg text-xs font-bold transition text-slate-500 dark:text-slate-400";
                 formPin.classList.remove('hidden');
-                formFP.classList.add('hidden');
-            } else {
+            } else if (mode === 'fp') {
                 tabFP.className = "py-2 rounded-lg text-xs font-bold transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm";
-                tabPin.className = "py-2 rounded-lg text-xs font-bold transition text-slate-500 dark:text-slate-400";
                 formFP.classList.remove('hidden');
-                formPin.classList.add('hidden');
+            } else {
+                tabPattern.className = "py-2 rounded-lg text-xs font-bold transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm";
+                formPattern.classList.remove('hidden');
             }
         }
 
@@ -1428,7 +1524,7 @@
                     accountStatus: result.user.accountStatus || 'Active',
                     accountType: result.user.accountType || 'Savings',
                     dailyTransferLimit: result.user.dailyTransferLimit || 500000,
-                    txPin: '1234'
+                    txPin: result.user.txPin
                 };
                 saveUserData();
                 updateDashboardUI();
@@ -1436,6 +1532,24 @@
                 showToast('Login Successful!');
             } catch (error) {
                 showToast(error.message || 'Login failed', true);
+            }
+        }
+
+        async function attemptPatternLogin() {
+            const phone = document.getElementById('loginPhoneInput').value.trim();
+            const loginPattern = document.getElementById('loginPatternInput').value.trim();
+            if (!phone || phone.length < 10) return showToast('Enter a valid phone number to log in', true);
+            if (loginPattern.length < 4) return showToast('Enter your login pattern', true);
+            try {
+                const result = await apiRequest('/api/login', { method: 'POST', body: JSON.stringify({ phone, loginPattern }) });
+                currentUser = result.user;
+                saveUserData();
+                applyTheme(currentUser.theme || 'light');
+                updateDashboardUI();
+                showScreen('dashboardHub');
+                showToast('Pattern login successful');
+            } catch (error) {
+                showToast(error.message || 'Pattern login failed', true);
             }
         }
 
@@ -1511,8 +1625,12 @@
 
             document.getElementById('profileName').innerText = currentUser.fullName;
             document.getElementById('profilePhone').innerText = `+234 ${currentUser.phone}`;
+            document.getElementById('profileEmail').innerText = currentUser.email || 'Add an email in Settings';
+            document.getElementById('profileLoginMethod').innerText = currentUser.loginMethod === 'pattern' ? 'Pattern' : 'PIN';
             document.getElementById('profileAccountNumber').innerText = currentUser.accountNumber;
             document.getElementById('profileAvatar').innerText = initials || 'VP';
+            updateAvatarElement(document.getElementById('profileAvatar'), currentUser.profileImage, currentUser.fullName);
+            updateAvatarElement(document.getElementById('settingsAvatar'), currentUser.profileImage, currentUser.fullName);
             document.getElementById('accountStatusBadge').innerText = currentUser.accountStatus || 'Active';
             document.getElementById('accountTypeLabel').innerText = currentUser.accountType || 'Savings';
             document.getElementById('dailyLimitLabel').innerText = `₦${Number(currentUser.dailyTransferLimit || 500000).toLocaleString('en-NG')}`;

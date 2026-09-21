@@ -81,6 +81,8 @@ test('wallet and savings goals endpoints expose premium financial products', asy
   assert.ok(Array.isArray(cardsBody));
   assert.ok(Array.isArray(goalsBody));
   assert.ok(cardsBody[0].last4);
+  assert.match(cardsBody[0].number, /^\d{4}( \d{4}){3}$/);
+  assert.match(cardsBody[0].cvc, /^\d{3}$/);
   assert.ok(goalsBody[0].target > 0);
 
   child.kill('SIGTERM');
