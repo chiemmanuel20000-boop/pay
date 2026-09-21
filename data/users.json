@@ -1,0 +1,66 @@
+[
+  {
+    "id": "bbn-demo-adaeze",
+    "fullName": "Adaeze Okafor",
+    "phone": "8012345678",
+    "email": "adaeze.okafor@example.com",
+    "accountNumber": "7000000001",
+    "loginPin": "123456",
+    "paymentPin": "1234",
+    "balance": 250000,
+    "accountType": "Savings",
+    "loginMethod": "pin",
+    "pattern": "1-2-5-8",
+    "profileImage": "",
+    "theme": "light",
+    "card": {
+      "number": "5399 4412 7810 0001",
+      "expiry": "08/29",
+      "cvc": "482"
+    },
+    "history": [
+      {
+        "id": "bbn-welcome-1",
+        "title": "Account opening bonus",
+        "type": "Welcome bonus",
+        "amount": 250000,
+        "isCredit": true,
+        "name": "BBN Bank Nigeria",
+        "date": "2026-09-21T13:27:42.593Z",
+        "ref": "BBN-WELCOME-001"
+      }
+    ]
+  },
+  {
+    "id": "bbn-demo-chinedu",
+    "fullName": "Chinedu Eze",
+    "phone": "8098765432",
+    "email": "chinedu.eze@example.com",
+    "accountNumber": "7000000002",
+    "loginPin": "654321",
+    "paymentPin": "4321",
+    "balance": 175000,
+    "accountType": "Current",
+    "loginMethod": "pin",
+    "pattern": "1-2-5-8",
+    "profileImage": "",
+    "theme": "light",
+    "card": {
+      "number": "5399 4412 7810 3456",
+      "expiry": "11/29",
+      "cvc": "731"
+    },
+    "history": [
+      {
+        "id": "bbn-welcome-2",
+        "title": "Account opening bonus",
+        "type": "Welcome bonus",
+        "amount": 175000,
+        "isCredit": true,
+        "name": "BBN Bank Nigeria",
+        "date": "2026-09-21T13:27:42.593Z",
+        "ref": "BBN-WELCOME-002"
+      }
+    ]
+  }
+]
