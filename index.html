@@ -1538,25 +1538,24 @@
             if (loginPin && !/^\d{6}$/.test(loginPin)) return showToast('Login PIN must be exactly 6 digits', true);
             if (txPin && !/^\d{4}$/.test(txPin)) return showToast('Payment PIN must be exactly 4 digits', true);
             if (loginMethod === 'pattern' && loginPattern.length < 4) return showToast('Enter at least 4 pattern points', true);
+
+            currentUser.loginMethod = loginMethod;
+            if (loginPin) currentUser.loginPin = loginPin;
+            if (txPin) currentUser.txPin = txPin;
+            if (loginPattern) currentUser.loginPattern = loginPattern;
+            saveUserData();
+            document.getElementById('newLoginPin').value = '';
+            document.getElementById('newPaymentPin').value = '';
+            document.getElementById('securityPatternValue').value = '';
+            updateDashboardUI();
+            showToast('Security settings saved');
+
             try {
                 const result = await apiRequest(`/api/security/${currentUser.phone}`, { method: 'PATCH', body: JSON.stringify({ loginMethod, loginPin, txPin, loginPattern }) });
                 currentUser = { ...currentUser, ...result.user, loginPin: loginPin || currentUser.loginPin, loginPattern: loginPattern || currentUser.loginPattern };
                 saveUserData();
-                document.getElementById('newLoginPin').value = '';
-                document.getElementById('newPaymentPin').value = '';
-                document.getElementById('securityPatternValue').value = '';
-                updateDashboardUI();
-                showToast('Security settings updated');
             } catch (error) {
-                currentUser.loginMethod = loginMethod;
-                if (loginPin) currentUser.loginPin = loginPin;
-                if (txPin) currentUser.txPin = txPin;
-                if (loginPattern) currentUser.loginPattern = loginPattern;
-                saveUserData();
-                document.getElementById('newLoginPin').value = '';
-                document.getElementById('newPaymentPin').value = '';
-                document.getElementById('securityPatternValue').value = '';
-                showToast('Security settings saved on this device.');
+                // Local credentials remain active when the API is unavailable.
             }
         }
 
