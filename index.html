@@ -1231,7 +1231,7 @@
             const data = contentType.includes('application/json') ? await response.json() : await response.text();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Request failed');
+                throw new Error(data.message || 'The account update could not be completed.');
             }
 
             return data;
@@ -1408,7 +1408,6 @@
             }
 
             try {
-                const fingerprintCredentialId = await registerFingerprintCredential(fullName, phone);
                 const payload = {
                     fullName,
                     phone,
@@ -1416,8 +1415,7 @@
                     txPin,
                     idType: selectedIdType,
                     idNumber: document.getElementById('idNumberInput').value.trim(),
-                    faceVerified,
-                    fingerprintCredentialId
+                    faceVerified
                 };
 
                 const result = await apiRequest('/api/register', {
@@ -1429,7 +1427,6 @@
                     ...result.user,
                     txPin,
                     loginPin,
-                    fingerprintCredentialId,
                     faceSnapshot
                 };
 
@@ -1549,7 +1546,7 @@
                 updateDashboardUI();
                 showToast('Security settings saved to your account');
             } catch (error) {
-                showToast(error.message || 'Security request failed', true);
+                showToast(error.message || 'Security update could not be completed.', true);
             }
         }
 
@@ -1646,13 +1643,6 @@
                 showScreen('dashboardHub');
                 showToast('Login Successful!');
             } catch (error) {
-                if (currentUser && currentUser.phone === phone && currentUser.loginMethod !== 'pattern' && currentUser.loginPin === pin) {
-                    applyTheme(currentUser.theme || 'light');
-                    updateDashboardUI();
-                    showScreen('dashboardHub');
-                    showToast('Login successful');
-                    return;
-                }
                 showToast(error.message || 'Login failed', true);
             }
         }
@@ -1671,72 +1661,21 @@
                 showScreen('dashboardHub');
                 showToast('Pattern login successful');
             } catch (error) {
-                if (currentUser && currentUser.phone === phone && currentUser.loginMethod === 'pattern' && currentUser.loginPattern === loginPattern) {
-                    applyTheme(currentUser.theme || 'light');
-                    updateDashboardUI();
-                    showScreen('dashboardHub');
-                    showToast('Pattern login successful');
-                    return;
-                }
                 showToast(error.message || 'Pattern login failed', true);
-            }
-        }
-
-        async function registerFingerprintCredential(fullName, phone) {
-            if (!window.PublicKeyCredential || !window.isSecureContext || !location.hostname) return null;
-            try {
-                const challenge = new Uint8Array(32);
-                const userId = new Uint8Array(16);
-                crypto.getRandomValues(challenge);
-                crypto.getRandomValues(userId);
-                const credential = await navigator.credentials.create({
-                    publicKey: {
-                        challenge,
-                        rp: { name: "V PAY", id: location.hostname },
-                        user: { id: userId, name: phone, displayName: fullName },
-                        pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-                        authenticatorSelection: { residentKey: "preferred", userVerification: "required" },
-                        timeout: 60000,
-                        attestation: "none"
-                    }
-                });
-                return btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-            } catch (error) {
-                return null;
             }
         }
 
         async function simulateFingerprintLogin() {
             if (!currentUser) return;
-            if (location.protocol === 'file:' || !window.PublicKeyCredential || !window.isSecureContext) {
-                showToast("Touching fingerprint sensor...", false);
-                const fingerprintButton = document.querySelector('#loginFPForm .fp-pulse');
-                fingerprintButton.classList.add('bg-brand-400/30', 'scale-110');
-                setTimeout(() => {
-                    fingerprintButton.classList.remove('bg-brand-400/30', 'scale-110');
-                    updateDashboardUI();
-                    showScreen('dashboardHub');
-                    showToast("Fingerprint authenticated!");
-                }, 900);
-                return;
-            }
-            try {
-                const challenge = new Uint8Array(32);
-                crypto.getRandomValues(challenge);
-                await navigator.credentials.get({
-                    publicKey: {
-                        challenge,
-                        timeout: 60000,
-                        userVerification: "required",
-                        allowCredentials: currentUser.fingerprintCredentialId ? [{ id: Uint8Array.from(atob(currentUser.fingerprintCredentialId), char => char.charCodeAt(0)), type: "public-key" }] : []
-                    }
-                });
-                showToast("Fingerprint authenticated!");
+            showToast("Touching fingerprint sensor...", false);
+            const fingerprintButton = document.querySelector('#loginFPForm .fp-pulse');
+            fingerprintButton.classList.add('bg-brand-400/30', 'scale-110');
+            setTimeout(() => {
+                fingerprintButton.classList.remove('bg-brand-400/30', 'scale-110');
                 updateDashboardUI();
                 showScreen('dashboardHub');
-            } catch (error) {
-                showToast("Fingerprint authentication was cancelled or unavailable", true);
-            }
+                showToast("Fingerprint authenticated!");
+            }, 900);
         }
 
         function logout() {
@@ -1976,20 +1915,7 @@
             button.disabled = true;
             button.innerHTML = '<i class="fa-solid fa-fingerprint mr-2"></i>Checking fingerprint...';
             try {
-                if (location.protocol !== 'file:' && window.PublicKeyCredential && window.isSecureContext && currentUser.fingerprintCredentialId) {
-                    const challenge = new Uint8Array(32);
-                    crypto.getRandomValues(challenge);
-                    await navigator.credentials.get({
-                        publicKey: {
-                            challenge,
-                            timeout: 60000,
-                            userVerification: 'required',
-                            allowCredentials: [{ id: Uint8Array.from(atob(currentUser.fingerprintCredentialId), character => character.charCodeAt(0)), type: 'public-key' }]
-                        }
-                    });
-                } else {
-                    await new Promise(resolve => setTimeout(resolve, 700));
-                }
+                await new Promise(resolve => setTimeout(resolve, 700));
                 pendingPaymentAuth = 'fingerprint';
                 document.getElementById('txPinAuthInput').value = '';
                 document.getElementById('pinPaymentMethod').classList.add('opacity-50');
