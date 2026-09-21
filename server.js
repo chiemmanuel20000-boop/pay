@@ -146,6 +146,11 @@ function findUserByPhone(phone) {
   return readUsers().find((user) => normalizePhone(user.phone) === normalized);
 }
 
+function findUserByPhoneOrAccount(identity) {
+  const value = String(identity || '');
+  return findUserByPhone(value) || readUsers().find((user) => user.accountNumber === value.replace(/\D/g, ''));
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', app: 'V PAY backend' });
 });
@@ -304,9 +309,9 @@ app.patch('/api/preferences/:phone', (req, res) => {
 });
 
 app.post('/api/transfer', (req, res) => {
-  const { phone, recipientAccountNumber, amount, narration, txPin } = req.body || {};
+  const { phone, accountNumber, recipientAccountNumber, amount, narration, txPin } = req.body || {};
 
-  const sender = findUserByPhone(phone);
+  const sender = findUserByPhoneOrAccount(accountNumber || phone);
   if (!sender) {
     return res.status(404).json({ message: 'Sender account not found' });
   }

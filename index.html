@@ -1985,10 +1985,6 @@
             if (!currentUser) return;
 
             const authorizationPin = pendingPaymentAuth === 'fingerprint' ? currentUser.txPin : pin;
-            if (pendingPaymentAuth !== 'fingerprint' && pin !== currentUser.txPin) {
-                showToast("Incorrect 4-Digit Transaction PIN", true);
-                return;
-            }
 
             try {
                 if (pendingTx.type === 'Bank Transfer') {
@@ -1996,6 +1992,7 @@
                         method: 'POST',
                         body: JSON.stringify({
                             phone: currentUser.phone,
+                            accountNumber: currentUser.accountNumber,
                             recipientAccountNumber: pendingTx.payload.acc,
                             amount: pendingTx.amount,
                             narration: pendingTx.payload.note || 'Bank transfer',
