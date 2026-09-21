@@ -60,7 +60,7 @@
             to { width: 100%; }
         }
         .preloader-progress {
-            animation: preloader-progress 15s linear forwards;
+            animation: preloader-progress 7s linear forwards;
         }
         /* Hide scrollbars for slick mobile app look */
         .no-scrollbar::-webkit-scrollbar {
@@ -1119,7 +1119,7 @@
                 const preloader = document.getElementById('preloader');
                 preloader.classList.add('opacity-0');
                 setTimeout(() => preloader.style.display = 'none', 500);
-            }, 15000);
+            }, 7000);
 
             populateBanks();
             populateDataPlans();
