@@ -88,6 +88,36 @@
         .fp-pulse {
             animation: pulse-ring 2s infinite;
         }
+        .pattern-pad {
+            touch-action: none;
+            user-select: none;
+        }
+        .pattern-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 9999px;
+            background: #cbd5e1;
+            border: 4px solid #f8fafc;
+            box-shadow: 0 0 0 2px #cbd5e1;
+            transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+        .dark .pattern-dot {
+            background: #64748b;
+            border-color: #1e293b;
+            box-shadow: 0 0 0 2px #64748b;
+        }
+        .pattern-dot.active {
+            background: #a9d916;
+            box-shadow: 0 0 0 3px #7da900;
+            transform: scale(1.2);
+        }
+        .pattern-line {
+            stroke: #a9d916;
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
     </style>
 </head>
 <body class="bg-lime-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex justify-center items-center font-sans antialiased selection:bg-brand-400 selection:text-black">
@@ -286,8 +316,17 @@
 
                 <div id="loginPatternForm" class="space-y-4 hidden">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Pattern points</label>
-                        <input type="text" id="loginPatternInput" placeholder="e.g. 1-2-5-8" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3.5 px-4 text-center tracking-wider text-slate-900 dark:text-white text-lg font-bold focus:outline-none focus:border-brand-400">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">Draw your login pattern</label>
+                        <div id="loginPatternPad" class="pattern-pad relative w-44 h-44 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5">
+                            <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline id="loginPatternLine" class="pattern-line" points=""></polyline></svg>
+                            <div class="relative z-10 grid grid-cols-3 grid-rows-3 gap-7 w-full h-full place-items-center">
+                                <button type="button" data-pattern-point="1" class="pattern-dot" aria-label="Pattern point 1"></button><button type="button" data-pattern-point="2" class="pattern-dot" aria-label="Pattern point 2"></button><button type="button" data-pattern-point="3" class="pattern-dot" aria-label="Pattern point 3"></button>
+                                <button type="button" data-pattern-point="4" class="pattern-dot" aria-label="Pattern point 4"></button><button type="button" data-pattern-point="5" class="pattern-dot" aria-label="Pattern point 5"></button><button type="button" data-pattern-point="6" class="pattern-dot" aria-label="Pattern point 6"></button>
+                                <button type="button" data-pattern-point="7" class="pattern-dot" aria-label="Pattern point 7"></button><button type="button" data-pattern-point="8" class="pattern-dot" aria-label="Pattern point 8"></button><button type="button" data-pattern-point="9" class="pattern-dot" aria-label="Pattern point 9"></button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="loginPatternValue">
+                        <p id="loginPatternStatus" class="text-[10px] text-center text-slate-400 mt-2">Connect at least 4 points</p>
                     </div>
                     <button onclick="attemptPatternLogin()" class="w-full bg-brand-400 hover:bg-brand-500 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg shadow-brand-400/20 active:scale-[0.98] transition">Login with pattern</button>
                 </div>
@@ -341,6 +380,12 @@
                         <span id="accountStatusBadge" class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-bold">Active</span>
                         <button onclick="showScreen('profileScreen')" class="text-xs text-slate-400 hover:text-brand-600 transition" title="View profile">
                             <i class="fa-solid fa-user-circle text-lg"></i>
+                        </button>
+                        <button onclick="showScreen('settingsScreen')" class="text-xs text-slate-400 hover:text-brand-600 transition" title="Open settings">
+                            <i class="fa-solid fa-sliders text-base"></i>
+                        </button>
+                        <button onclick="showScreen('cardScreen')" class="text-xs text-slate-400 hover:text-brand-600 transition" title="View V PAY card">
+                            <i class="fa-solid fa-credit-card text-base"></i>
                         </button>
                         <button onclick="logout()" class="text-xs text-slate-400 hover:text-red-500 transition" title="Log out">
                             <i class="fa-solid fa-right-from-bracket text-base"></i>
@@ -507,6 +552,7 @@
                 </div>
                 <div class="text-center py-3">
                     <div id="profileAvatar" class="w-20 h-20 rounded-full gold-shine text-slate-950 font-black text-2xl mx-auto flex items-center justify-center shadow-lg">VP</div>
+                    <button onclick="document.getElementById('profileImageInput').click(); showScreen('settingsScreen')" class="text-[10px] font-bold text-brand-600 dark:text-brand-300 mt-2"><i class="fa-solid fa-camera mr-1"></i>Edit picture</button>
                     <h3 id="profileName" class="text-xl font-bold text-slate-900 dark:text-white mt-3">V PAY Customer</h3>
                     <p id="profilePhone" class="text-xs text-slate-500 dark:text-slate-400 mt-1"></p>
                 </div>
@@ -515,10 +561,6 @@
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Bank</span><span class="font-bold text-slate-900 dark:text-white">V PAY</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Currency</span><span class="font-bold text-brand-600 dark:text-brand-300">Naira (₦)</span></div>
                     <div class="flex justify-between text-sm"><span class="text-slate-500">Identity status</span><span class="font-bold text-emerald-500">Verified</span></div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="showScreen('settingsScreen')" class="p-3 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-sliders"></i> Settings</button>
-                    <button onclick="showScreen('cardScreen')" class="p-3 rounded-xl bg-brand-400 text-slate-950 text-xs font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-credit-card"></i> V PAY Card</button>
                 </div>
                 <div class="space-y-2">
                     <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Contact details</h4>
@@ -561,7 +603,19 @@
                         <select id="loginMethodSelect" onchange="togglePatternField()" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400"><option value="pin">Use PIN to log in</option><option value="pattern">Use pattern to log in</option></select>
                         <input id="newLoginPin" type="password" maxlength="6" inputmode="numeric" placeholder="New 6-digit login PIN" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400">
                         <input id="newPaymentPin" type="password" maxlength="4" inputmode="numeric" placeholder="New 4-digit payment PIN" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400">
-                        <input id="securityPatternInput" type="text" minlength="4" placeholder="Pattern points, e.g. 1-2-5-8" class="hidden w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-400">
+                        <div id="securityPatternPadWrap" class="hidden">
+                            <p class="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">Draw your new login pattern</p>
+                            <div id="securityPatternPad" class="pattern-pad relative w-44 h-44 mx-auto rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5">
+                                <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline id="securityPatternLine" class="pattern-line" points=""></polyline></svg>
+                                <div class="relative z-10 grid grid-cols-3 grid-rows-3 gap-7 w-full h-full place-items-center">
+                                    <button type="button" data-pattern-point="1" class="pattern-dot" aria-label="Security pattern point 1"></button><button type="button" data-pattern-point="2" class="pattern-dot" aria-label="Security pattern point 2"></button><button type="button" data-pattern-point="3" class="pattern-dot" aria-label="Security pattern point 3"></button>
+                                    <button type="button" data-pattern-point="4" class="pattern-dot" aria-label="Security pattern point 4"></button><button type="button" data-pattern-point="5" class="pattern-dot" aria-label="Security pattern point 5"></button><button type="button" data-pattern-point="6" class="pattern-dot" aria-label="Security pattern point 6"></button>
+                                    <button type="button" data-pattern-point="7" class="pattern-dot" aria-label="Security pattern point 7"></button><button type="button" data-pattern-point="8" class="pattern-dot" aria-label="Security pattern point 8"></button><button type="button" data-pattern-point="9" class="pattern-dot" aria-label="Security pattern point 9"></button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="securityPatternValue">
+                            <p id="securityPatternStatus" class="text-[10px] text-center text-slate-400 mt-2">Connect at least 4 points</p>
+                        </div>
                         <button onclick="saveSecuritySettings()" class="w-full bg-brand-400 text-slate-950 font-bold py-3 rounded-xl text-sm">Update security</button>
                     </div>
                 </div>
@@ -1067,8 +1121,53 @@
             populateBanks();
             populateDataPlans();
             populateTvPackages();
+            initializePatternPads();
             loadUserData();
         };
+
+        function initializePatternPads() {
+            setupPatternPad('loginPatternPad', 'loginPatternValue', 'loginPatternLine', 'loginPatternStatus');
+            setupPatternPad('securityPatternPad', 'securityPatternValue', 'securityPatternLine', 'securityPatternStatus');
+        }
+
+        function setupPatternPad(padId, valueId, lineId, statusId) {
+            const pad = document.getElementById(padId);
+            if (!pad) return;
+            const state = { drawing: false, points: [] };
+            const dots = [...pad.querySelectorAll('[data-pattern-point]')];
+            const reset = () => {
+                state.points = [];
+                dots.forEach(dot => dot.classList.remove('active'));
+                document.getElementById(valueId).value = '';
+                document.getElementById(lineId).setAttribute('points', '');
+                document.getElementById(statusId).innerText = 'Connect at least 4 points';
+            };
+            const addPoint = (dot) => {
+                const point = dot.dataset.patternPoint;
+                if (state.points.includes(point)) return;
+                state.points.push(point);
+                dot.classList.add('active');
+                const positions = { 1: '20,20', 2: '50,20', 3: '80,20', 4: '20,50', 5: '50,50', 6: '80,50', 7: '20,80', 8: '50,80', 9: '80,80' };
+                document.getElementById(lineId).setAttribute('points', state.points.map(item => positions[item]).join(' '));
+                document.getElementById(valueId).value = state.points.join('-');
+                document.getElementById(statusId).innerText = state.points.length >= 4 ? `${state.points.length} points selected` : 'Connect at least 4 points';
+            };
+            pad.addEventListener('pointerdown', (event) => {
+                event.preventDefault();
+                reset();
+                state.drawing = true;
+                pad.setPointerCapture(event.pointerId);
+                const dot = event.target.closest('[data-pattern-point]');
+                if (dot) addPoint(dot);
+            });
+            document.addEventListener('pointermove', (event) => {
+                if (!state.drawing) return;
+                const dot = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-pattern-point]');
+                if (dot && pad.contains(dot)) addPoint(dot);
+            });
+            pad.addEventListener('pointerup', () => { state.drawing = false; });
+            pad.addEventListener('pointercancel', () => { state.drawing = false; });
+        }
 
         // Dark/Light Theme Switching
         function toggleTheme() {
@@ -1412,7 +1511,7 @@
 
         function togglePatternField() {
             const isPattern = document.getElementById('loginMethodSelect').value === 'pattern';
-            document.getElementById('securityPatternInput').classList.toggle('hidden', !isPattern);
+            document.getElementById('securityPatternPadWrap').classList.toggle('hidden', !isPattern);
         }
 
         async function saveSecuritySettings() {
@@ -1420,7 +1519,7 @@
             const loginMethod = document.getElementById('loginMethodSelect').value;
             const loginPin = document.getElementById('newLoginPin').value.trim();
             const txPin = document.getElementById('newPaymentPin').value.trim();
-            const loginPattern = document.getElementById('securityPatternInput').value.trim();
+            const loginPattern = document.getElementById('securityPatternValue').value.trim();
             if (loginPin && !/^\d{6}$/.test(loginPin)) return showToast('Login PIN must be exactly 6 digits', true);
             if (txPin && !/^\d{4}$/.test(txPin)) return showToast('Payment PIN must be exactly 4 digits', true);
             if (loginMethod === 'pattern' && loginPattern.length < 4) return showToast('Enter at least 4 pattern points', true);
@@ -1430,7 +1529,7 @@
                 saveUserData();
                 document.getElementById('newLoginPin').value = '';
                 document.getElementById('newPaymentPin').value = '';
-                document.getElementById('securityPatternInput').value = '';
+                document.getElementById('securityPatternValue').value = '';
                 updateDashboardUI();
                 showToast('Security settings updated');
             } catch (error) {
@@ -1537,7 +1636,7 @@
 
         async function attemptPatternLogin() {
             const phone = document.getElementById('loginPhoneInput').value.trim();
-            const loginPattern = document.getElementById('loginPatternInput').value.trim();
+            const loginPattern = document.getElementById('loginPatternValue').value.trim();
             if (!phone || phone.length < 10) return showToast('Enter a valid phone number to log in', true);
             if (loginPattern.length < 4) return showToast('Enter your login pattern', true);
             try {
