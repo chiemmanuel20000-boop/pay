@@ -1234,7 +1234,7 @@
                 }
             }
             if (!response) {
-                throw new Error('Banking service is temporarily unavailable. Please try again.');
+                throw new Error('V PAY backend is unavailable. Run npm start, then refresh the app.');
             }
 
             const contentType = response.headers.get('content-type') || '';
@@ -1445,7 +1445,7 @@
                 showToast('Account Created Successfully!');
                 showScreen('dashboardHub');
             } catch (error) {
-                showToast(error.message || 'Account creation could not be completed.', true);
+                showToast(error.message || 'Registration failed', true);
             }
         }
 
